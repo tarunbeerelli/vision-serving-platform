@@ -11,9 +11,9 @@ import pytest
 
 
 def test_onnx_output_path_is_correct() -> None:
-    from quantization.export_onnx import OUTPUT_PATH
+    from quantization.export_onnx import OUTPUT_DIR
 
-    assert str(OUTPUT_PATH) == "triton_repo/vit_fp32/1/model.onnx"
+    assert str(OUTPUT_DIR) == "triton_repo/vit_fp32/1"
 
 
 def test_calibration_output_dir_is_correct() -> None:
