@@ -30,3 +30,13 @@ test:
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	rm -rf src/generated dist .coverage .ruff_cache .mypy_cache .pytest_cache
+
+export-onnx:
+	python quantization/export_onnx.py
+
+validate-onnx:
+	python quantization/validate_onnx.py
+
+# Run on Vast.ai only
+convert-trt:
+	python quantization/convert_tensorrt.py
