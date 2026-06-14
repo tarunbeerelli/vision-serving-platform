@@ -1,0 +1,70 @@
+[tool.poetry]
+name = "vision-serving-platform"
+version = "0.1.0"
+description = "Production vision inference platform — Triton + TensorRT + GKE"
+authors = ["Tarun Beerelli <tarun99.m@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "serving", from = "src" }]
+package-mode = true
+
+[tool.poetry.dependencies]
+python = "^3.12"
+grpcio                 = "^1.63.0"
+grpcio-tools           = "^1.63.0"
+grpcio-reflection      = "^1.63.0"
+grpcio-health-checking = "^1.63.0"
+protobuf               = "^5.27.0"
+torch                  = "^2.3.0"
+torchvision            = "^0.18.0"
+transformers           = "^4.41.0"
+onnx                   = "^1.16.0"
+onnxruntime            = "^1.18.0"
+tritonclient           = {extras = ["grpc"], version = "^2.46.0"}
+prometheus-client      = "^0.20.0"
+structlog              = "^24.2.0"
+numpy                  = "^1.26.0"
+Pillow                 = "^10.3.0"
+pydantic               = "^2.7.0"
+pydantic-settings      = "^2.3.0"
+pyyaml                 = "^6.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest         = "^8.2.0"
+pytest-asyncio = "^0.23.0"
+pytest-cov     = "^5.0.0"
+ruff           = "^0.4.0"
+mypy           = "^1.10.0"
+pre-commit     = "^3.7.0"
+grpcio-testing = "^1.63.0"
+
+[tool.poetry.group.quantization.dependencies]
+# Install on Vast.ai GPU instance only: poetry install --with quantization
+optimum  = "^1.20.0"
+datasets = "^2.19.0"
+
+[tool.poetry.group.loadtest.dependencies]
+locust = "^2.29.0"
+
+[tool.ruff]
+line-length    = 100
+target-version = "py312"
+exclude        = ["src/generated/"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version      = "3.12"
+strict              = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths    = ["tests"]
+pythonpath   = ["src"]
+addopts      = "-v --tb=short --cov=serving --cov-report=term-missing"
+
+[build-system]
+requires      = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

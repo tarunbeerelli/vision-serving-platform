@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package inference.v1;
+
+option py_generic_services = true;
+
+// Gateway sits in front of Triton.
+// Clients → GatewayService → Triton (KServe v2 internally).
+// Swapping Triton never affects clients.
+
+message ImagePayload {
+  bytes  data   = 1;
+  string format = 2; // "jpeg" | "png"
+}
+
+// ── ViT classification ──────────────────────────────────────────────────────
+
+message ClassifyRequest {
+  ImagePayload image         = 1;
+  int32        top_k         = 2; // default 5
+  string       model_version = 3; // "fp32" | "int8" | "" → server default
+}
+
+message ClassifyResponse {
+  repeated Prediction predictions      = 1;
+  string              model_version    = 2;
+  float               inference_ms     = 3;
+  float               triton_compute_ms = 4;
+}
+
+message Prediction {
+  string label      = 1;
+  float  confidence = 2;
+  int32  class_id   = 3;
+}
+
+// ── CLIP zero-shot ────────────────────────────────────────────────
+
+message ZeroShotRequest {
+  ImagePayload    image         = 1;
+  repeated string labels        = 2;
+  string          model_version = 3;
+}
+
+message ZeroShotResponse {
+  repeated ZeroShotPrediction predictions      = 1;
+  string                      model_version    = 2;
+  float                       inference_ms     = 3;
+  float                       triton_compute_ms = 4;
+}
+
+message ZeroShotPrediction {
+  string label = 1;
+  float  score = 2; // cosine similarity [-1, 1]
+}
+
+// ── Health + inventory ──────────────────────────────────────────────────────
+
+message HealthRequest  {}
+
+message HealthResponse {
+  bool   healthy         = 1;
+  string triton_status   = 2; // "READY" | "NOT_READY" | "UNREACHABLE"
+  string gateway_version = 3;
+}
+
+message ModelsRequest  {}
+
+message ModelsResponse {
+  repeated ModelInfo models = 1;
+}
+
+message ModelInfo {
+  string name    = 1;
+  string version = 2;
+  string state   = 3; // "READY" | "LOADING" | "UNAVAILABLE"
+  string backend = 4; // "tensorrt_plan" | "onnxruntime"
+}
+
+// ── Service ─────────────────────────────────────────────────────────────────
+
+service GatewayService {
+  rpc Classify (ClassifyRequest) returns (ClassifyResponse);
+  rpc ZeroShot (ZeroShotRequest) returns (ZeroShotResponse);
+  rpc Health   (HealthRequest)   returns (HealthResponse);
+  rpc Models   (ModelsRequest)   returns (ModelsResponse);
+}

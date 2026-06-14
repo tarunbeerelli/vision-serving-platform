@@ -1,0 +1,24 @@
+gateway:
+  host: "0.0.0.0"
+  port: 50051
+  metrics_port: 9090   # Prometheus scrapes here, separate from gRPC port
+  log_level: "INFO"
+
+triton:
+  host: "triton-service"   # k8s Service DNS name; override to localhost locally
+  grpc_port: 8001
+  http_port: 8000
+  timeout_s: 10.0
+
+models:
+  default_vit_version: "int8"
+  default_clip_version: "fp32"
+  top_k_default: 5
+
+observability:
+  enable_request_logging: true
+  enable_metrics: true
+
+gcs:
+  model_bucket: "vision-serving-models"
+  model_prefix: "triton_repo"

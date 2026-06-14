@@ -1,0 +1,32 @@
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# never commit generated stubs — run make proto
+src/generated/
+
+.env
+.env.*
+
+# terraform state lives in GCS backend
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+
+# model artifacts live in GCS
+triton_repo/*/1/*.onnx
+triton_repo/*/1/*.plan
+triton_repo/*/1/*.engine
+quantization/calibration_data/
+
+.DS_Store
+.vscode/
+.idea/
