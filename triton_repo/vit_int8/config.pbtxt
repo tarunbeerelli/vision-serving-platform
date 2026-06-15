@@ -1,0 +1,50 @@
+name: "vit_int8"
+backend: "tensorrt"
+max_batch_size: 32
+
+input [
+  {
+    name: "pixel_values"
+    data_type: TYPE_FP32
+    dims: [ 3, 224, 224 ]
+  }
+]
+
+output [
+  {
+    name: "logits"
+    data_type: TYPE_FP32
+    dims: [ 1000 ]
+  }
+]
+
+# Same dynamic batching config as FP32 — clients see identical behaviour.
+# The only difference is throughput and latency, visible in Grafana.
+dynamic_batching {
+  preferred_batch_size: [ 8, 16 ]
+  max_queue_delay_microseconds: 50000
+}
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+    gpus: [ 0 ]
+  }
+]
+
+# TensorRT-specific: point to the engine file built in Phase 2.
+# Triton expects it at triton_repo/vit_int8/1/model.plan
+optimization {
+  execution_accelerators {
+    gpu_execution_accelerator [
+      {
+        name: "tensorrt"
+        parameters {
+          key: "precision_mode"
+          value: "INT8"
+        }
+      }
+    ]
+  }
+}

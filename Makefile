@@ -40,3 +40,14 @@ validate-onnx:
 # Run on Vast.ai only
 convert-trt:
 	python quantization/convert_tensorrt.py
+
+triton-local:
+	docker run --rm -p 8000:8000 -p 8001:8001 -p 8002:8002 \
+		-v $(PWD)/triton_repo:/models \
+		nvcr.io/nvidia/tritonserver:24.05-py3 \
+		tritonserver --model-repository=/models \
+		--model-control-mode=explicit \
+		--load-model=vit_fp32
+
+test-triton:
+	python scripts/test_triton_local.py

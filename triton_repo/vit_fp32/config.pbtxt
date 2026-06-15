@@ -1,0 +1,39 @@
+name: "vit_fp32"
+backend: "onnxruntime"
+max_batch_size: 32
+
+# Input matches exactly what export_onnx.py declared:
+#   input_names=["pixel_values"], shape [batch, 3, 224, 224], dtype float32
+input [
+  {
+    name: "pixel_values"
+    data_type: TYPE_FP32
+    dims: [ 3, 224, 224 ]
+  }
+]
+
+# Output matches: output_names=["logits"], shape [batch, 1000]
+output [
+  {
+    name: "logits"
+    data_type: TYPE_FP32
+    dims: [ 1000 ]
+  }
+]
+
+# Dynamic batching: Triton waits up to 50ms to accumulate a batch.
+# preferred_batch_size tells it to aim for 8 or 16 requests per batch.
+# Without this, every request gets its own forward pass — wasteful on GPU.
+dynamic_batching {
+  preferred_batch_size: [ 8, 16 ]
+  max_queue_delay_microseconds: 50000
+}
+
+instance_group [
+  {
+    # COUNT 1 = one model instance. On GPU this means one CUDA context.
+    # Increase to 2 if GPU has headroom and you want parallel execution.
+    count: 1
+    kind: KIND_CPU    # local testing on M1 — change to KIND_GPU on Vast.ai
+  }
+]
