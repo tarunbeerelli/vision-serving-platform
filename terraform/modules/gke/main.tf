@@ -1,9 +1,9 @@
 # GKE Standard cluster — explicit node pools, full control over machine types.
 # Standard vs Autopilot: Standard lets us configure GPU node pools explicitly,
 resource "google_container_cluster" "primary" {
-  name     = var.cluster_name
-  location = var.region
-  project  = var.project_id
+  name                = var.cluster_name
+  location            = var.region
+  project             = var.project_id
   deletion_protection = false
 
   # Remove the default node pool — we create explicit pools below
@@ -45,7 +45,7 @@ resource "google_container_node_pool" "cpu_nodes" {
   }
 
   node_config {
-    machine_type    = "e2-standard-2"  # 2 vCPU, 8GB RAM
+    machine_type    = "e2-standard-2" # 2 vCPU, 8GB RAM
     service_account = var.node_service_account
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
 
@@ -59,10 +59,10 @@ resource "google_container_node_pool" "cpu_nodes" {
 resource "google_container_node_pool" "gpu_nodes" {
   name     = "gpu-pool"
   cluster  = google_container_cluster.primary.id
-  location = var.region   # GPU pools use zonal location for T4 availability
+  location = var.region # GPU pools use zonal location for T4 availability
   project  = var.project_id
 
-  initial_node_count = 0  # starts at zero — saves cost when idle
+  initial_node_count = 0 # starts at zero — saves cost when idle
 
   autoscaling {
     min_node_count = 0
@@ -70,7 +70,7 @@ resource "google_container_node_pool" "gpu_nodes" {
   }
 
   node_config {
-    machine_type    = "n1-standard-4"  # 4 vCPU, 15GB RAM — required for T4
+    machine_type    = "n1-standard-4" # 4 vCPU, 15GB RAM — required for T4
     service_account = var.node_service_account
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
 

@@ -1,6 +1,6 @@
 resource "google_compute_network" "vpc" {
   name                    = "${var.cluster_name}-vpc"
-  auto_create_subnetworks = false  # never use auto mode in production
+  auto_create_subnetworks = false # never use auto mode in production
   project                 = var.project_id
 }
 

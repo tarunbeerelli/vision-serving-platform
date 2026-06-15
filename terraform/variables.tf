@@ -25,7 +25,7 @@ variable "cluster_name" {
 variable "model_bucket_name" {
   description = "GCS bucket for Triton model repository"
   type        = string
-  default     = "vision-serving-models-564530715752"  # suffix with project number for global uniqueness
+  default     = "vision-serving-models-564530715752" # suffix with project number for global uniqueness
 }
 
 variable "github_repo" {

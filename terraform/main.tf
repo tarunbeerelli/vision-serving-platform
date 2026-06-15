@@ -13,13 +13,13 @@ module "vpc" {
 
 # ── GKE cluster ──────────────────────────────────────────────────────────────
 module "gke" {
-  source              = "./modules/gke"
-  project_id          = var.project_id
-  region              = var.region
-  zone                = var.zone
-  cluster_name        = var.cluster_name
-  network             = module.vpc.network_name
-  subnetwork          = module.vpc.subnet_name
+  source               = "./modules/gke"
+  project_id           = var.project_id
+  region               = var.region
+  zone                 = var.zone
+  cluster_name         = var.cluster_name
+  network              = module.vpc.network_name
+  subnetwork           = module.vpc.subnet_name
   node_service_account = module.iam.node_service_account_email
 }
 
@@ -28,7 +28,7 @@ resource "google_service_account_iam_member" "triton_workload_identity" {
   role               = "roles/iam.workloadIdentityUser"
   member             = "serviceAccount:${var.project_id}.svc.id.goog[triton/triton-server]"
 
-  depends_on = [module.gke]   # wait for cluster so the identity pool exists
+  depends_on = [module.gke] # wait for cluster so the identity pool exists
 }
 
 # ── IAM + Workload Identity ───────────────────────────────────────────────────
