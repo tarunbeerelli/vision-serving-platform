@@ -12,6 +12,8 @@ proto:
 		--grpc_python_out=src/generated \
 		--pyi_out=src/generated \
 		proto/inference.proto
+	@sed -i '' 's/import inference_pb2/import src.generated.inference_pb2/' \
+		src/generated/inference_pb2_grpc.py
 	@touch src/generated/__init__.py
 	@echo "✓ Stubs in src/generated/"
 
@@ -43,3 +45,14 @@ convert-trt:
 
 run-gateway:
 	TRITON_HOST=localhost python -m serving.gateway
+
+triton-local:
+	docker run --rm -p 8000:8000 -p 8001:8001 -p 8002:8002 \
+		-v $(PWD)/triton_repo:/models \
+		nvcr.io/nvidia/tritonserver:24.05-py3 \
+		tritonserver --model-repository=/models \
+		--model-control-mode=explicit \
+		--load-model=vit_fp32
+
+test-triton:
+	python scripts/test_triton_local.py
