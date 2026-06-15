@@ -40,3 +40,6 @@ validate-onnx:
 # Run on Vast.ai only
 convert-trt:
 	python quantization/convert_tensorrt.py
+
+run-gateway:
+	TRITON_HOST=localhost python -m serving.gateway

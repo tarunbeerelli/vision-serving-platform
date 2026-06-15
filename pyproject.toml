@@ -53,7 +53,7 @@ exclude        = ["src/generated/"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
-ignore = ["E501", "E402"]
+ignore = ["E501", "E402", "N802", "N806"]
 
 [tool.mypy]
 python_version      = "3.12"
