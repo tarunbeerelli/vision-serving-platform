@@ -20,6 +20,7 @@ from serving.logging_config import configure_logging, get_logger
 from serving.metrics import start_metrics_server
 from serving.settings import settings
 
+configure_logging(settings.gateway.log_level)
 logger = get_logger(__name__)
 
 
@@ -71,7 +72,6 @@ def create_server() -> grpc.Server:
 
 
 def serve() -> None:
-    configure_logging(settings.gateway.log_level)
     logger.info(
         "gateway_starting",
         port=settings.gateway.port,
