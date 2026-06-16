@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: triton-service
+  namespace: triton
+  labels:
+    app: triton-server
+spec:
+  selector:
+    app: triton-server
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+    - name: grpc
+      port: 8001
+      targetPort: 8001
+    - name: metrics
+      port: 8002
+      targetPort: 8002
+  # ClusterIP — internal only, gateway talks to Triton inside the cluster
+  # External clients never hit Triton directly
+  type: ClusterIP
