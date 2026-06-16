@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: triton-server
+  namespace: triton
+  labels:
+    app: triton-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: triton-server
+  template:
+    metadata:
+      labels:
+        app: triton-server
+      annotations:
+        # Prometheus scrapes Triton metrics from port 8002
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8002"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: triton-server
+
+      # Init container downloads models from GCS before Triton starts.
+      # Triton fails immediately if the model repository is empty.
+      initContainers:
+        - name: model-downloader
+          image: google/cloud-sdk:slim
+          command:
+            - gsutil
+            - -m
+            - cp
+            - -r
+            - gs://vision-serving-models-564530715752/triton_repo/*
+            - /models/
+          volumeMounts:
+            - name: model-store
+              mountPath: /models
+
+      containers:
+        - name: triton-server
+          image: nvcr.io/nvidia/tritonserver:24.05-py3
+          args:
+            - tritonserver
+            - --model-repository=/models
+            - --model-control-mode=explicit
+            - --load-model=vit_fp32
+            - --load-model=vit_int8
+            - --log-verbose=1
+          ports:
+            - name: http
+              containerPort: 8000
+            - name: grpc
+              containerPort: 8001
+            - name: metrics
+              containerPort: 8002
+          resources:
+            requests:
+              cpu: "2"
+              memory: "4Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+              nvidia.com/gpu: "1"
+          readinessProbe:
+            httpGet:
+              path: /v2/health/ready
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /v2/health/live
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          volumeMounts:
+            - name: model-store
+              mountPath: /models
+
+      volumes:
+        - name: model-store
+          emptyDir: {}
+
+      # GPU toleration — matches the taint we set in Terraform
+      # Without this the pod stays Pending forever
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Equal"
+          value: "present"
+          effect: "NoSchedule"
+
+      # Node selector — only schedule on GPU nodes
+      nodeSelector:
+        pool: gpu

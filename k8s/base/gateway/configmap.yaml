@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  namespace: triton
+data:
+  # These env vars override settings.py defaults
+  # TRITON_HOST matches the k8s Service name above
+  TRITON_HOST: "triton-service"
+  TRITON_GRPC_PORT: "8001"
+  GATEWAY_PORT: "50051"
+  GATEWAY_METRICS_PORT: "9090"
+  MODEL_DEFAULT_VIT_VERSION: "int8"
+  LOG_LEVEL: "INFO"

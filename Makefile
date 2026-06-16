@@ -56,3 +56,15 @@ triton-local:
 
 test-triton:
 	python scripts/test_triton_local.py
+
+k8s-apply-dev:
+	kubectl apply -k k8s/overlays/dev
+
+k8s-apply-prod:
+	kubectl apply -k k8s/overlays/prod
+
+k8s-dry-run:
+	kubectl apply -k k8s/overlays/dev --dry-run=client
+
+k8s-diff:
+	kubectl diff -k k8s/overlays/dev

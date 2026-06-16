@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - triton/serviceaccount.yaml
+  - triton/deployment.yaml
+  - triton/service.yaml
+  - gateway/configmap.yaml
+  - gateway/deployment.yaml
+  - gateway/service.yaml
+  - hpa.yaml
