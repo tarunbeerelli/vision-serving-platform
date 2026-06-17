@@ -76,3 +76,45 @@ docker-run:
 	docker run --rm -p 50051:50051 -p 9090:9090 \
 		-e TRITON_HOST=host.docker.internal \
 		vision-serving-platform:local
+
+install-observability:
+	helm repo add prometheus-community \
+		https://prometheus-community.github.io/helm-charts
+	helm repo add grafana https://grafana.github.io/helm-charts
+	helm repo update
+	helm upgrade --install kube-prometheus-stack \
+		prometheus-community/kube-prometheus-stack \
+		--namespace monitoring \
+		--create-namespace \
+		--values monitoring/helm/prometheus-values.yaml
+	helm upgrade --install loki-stack \
+		grafana/loki-stack \
+		--namespace monitoring \
+		--values monitoring/helm/loki-values.yaml
+
+install-dcgm:
+	helm repo add gpu-helm-charts \
+		https://nvidia.github.io/dcgm-exporter/helm-charts
+	helm repo update
+	helm upgrade --install dcgm-exporter \
+		gpu-helm-charts/dcgm-exporter \
+		--namespace monitoring \
+		--values monitoring/helm/dcgm-values.yaml
+
+grafana-ip:
+	kubectl get svc kube-prometheus-stack-grafana \
+		-n monitoring \
+		-o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+
+grafana-password:
+	kubectl get secret kube-prometheus-stack-grafana \
+		-n monitoring \
+		-o jsonpath='{.data.admin-password}' | base64 -d
+
+port-forward-grafana:
+	kubectl port-forward svc/kube-prometheus-stack-grafana \
+		3000:80 -n monitoring
+
+port-forward-prometheus:
+	kubectl port-forward svc/kube-prometheus-stack-prometheus \
+		9090:9090 -n monitoring

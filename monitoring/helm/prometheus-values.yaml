@@ -1,0 +1,67 @@
+# kube-prometheus-stack configuration
+# Deployed via Helm — manages Prometheus, Grafana, Alertmanager, node-exporter
+
+grafana:
+  enabled: true
+  adminPassword: "vision-serving-admin"   # change in production
+  service:
+    type: LoadBalancer   # external IP so we can access the dashboard
+  grafana.ini:
+    server:
+      root_url: "%(protocol)s://%(domain)s/"
+  additionalDataSources:
+  - name: Loki
+    type: loki
+    url: http://loki-stack:3100
+    access: proxy
+    isDefault: false
+    jsonData:
+        maxLines: 1000
+
+prometheus:
+  prometheusSpec:
+    # Scrape interval — 15s is fine for demo, 30s for production
+    scrapeInterval: "15s"
+    evaluationInterval: "15s"
+
+    # Auto-discover PodMonitors and ServiceMonitors in all namespaces
+    podMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+    # Retain 7 days of metrics — enough for demo
+    retention: 7d
+
+    # Scrape gateway and Triton via pod annotations
+    # (prometheus.io/scrape: "true" annotations on our pods)
+    additionalScrapeConfigs:
+      - job_name: "gateway"
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ["triton"]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            target_label: __address__
+            regex: (.+)
+            replacement: $1
+          - source_labels: [__meta_kubernetes_pod_ip, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    # In production: configure Slack/PagerDuty receivers here
+    # For portfolio: alerts fire but just show in Alertmanager UI
+    storage:
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 1Gi

@@ -1,0 +1,16 @@
+# DCGM exporter — GPU metrics for Prometheus
+# Only runs on GPU nodes via nodeSelector
+
+nodeSelector:
+  pool: gpu
+
+tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Equal"
+    value: "present"
+    effect: "NoSchedule"
+
+serviceMonitor:
+  enabled: true
+  additionalLabels:
+    release: kube-prometheus-stack
