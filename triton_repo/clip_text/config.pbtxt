@@ -1,0 +1,41 @@
+name: "clip_text"
+backend: "onnxruntime"
+max_batch_size: 64
+
+# Text encoder handles larger batches efficiently
+# because tokenized text is cheap compared to image processing
+input [
+  {
+    name: "input_ids"
+    data_type: TYPE_INT64
+    dims: [ 77 ]
+  }
+]
+
+input [
+  {
+    name: "attention_mask"
+    data_type: TYPE_INT64
+    dims: [ 77 ]
+  }
+]
+
+output [
+  {
+    name: "text_embeddings"
+    data_type: TYPE_FP32
+    dims: [ 512 ]
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 8, 16, 32 ]
+  max_queue_delay_microseconds: 50000
+}
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_CPU
+  }
+]

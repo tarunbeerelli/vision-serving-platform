@@ -16,6 +16,7 @@ import grpc
 from grpc_reflection.v1alpha import reflection
 from serving.handlers.classify import ClassifyHandler
 from serving.handlers.health import HealthHandler
+from serving.handlers.zeroshot import ZeroShotHandler
 from serving.logging_config import configure_logging, get_logger
 from serving.metrics import start_metrics_server
 from serving.settings import settings
@@ -38,6 +39,7 @@ def create_server() -> grpc.Server:
 
     # Register handlers
     classify_handler = ClassifyHandler()
+    zeroshot_handler = ZeroShotHandler()
     health_handler = HealthHandler()
 
     # grpc_tools generates a combined servicer — we use a dispatch class
@@ -46,12 +48,7 @@ def create_server() -> grpc.Server:
             return classify_handler.Classify(request, context)
 
         def ZeroShot(self, request, context):  # type: ignore
-            # Phase 9 — not implemented yet
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-            context.set_details("ZeroShot not implemented yet")
-            from src.generated.inference_pb2 import ZeroShotResponse  # type: ignore
-
-            return ZeroShotResponse()
+            return zeroshot_handler.ZeroShot(request, context)
 
         def Health(self, request, context):  # type: ignore
             return health_handler.Health(request, context)
