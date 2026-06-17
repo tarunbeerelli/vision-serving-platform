@@ -118,3 +118,9 @@ port-forward-grafana:
 port-forward-prometheus:
 	kubectl port-forward svc/kube-prometheus-stack-prometheus \
 		9090:9090 -n monitoring
+
+export-clip:
+	python quantization/export_clip.py
+
+validate-clip:
+	python quantization/validate_clip.py
