@@ -1,0 +1,31 @@
+# loki-stack — Loki + Promtail
+# Promtail runs as DaemonSet, tails pod logs, ships to Loki
+# Grafana queries Loki via the built-in datasource
+
+loki:
+  enabled: true
+  persistence:
+    enabled: false
+
+promtail:
+  enabled: true
+  config:
+    snippets:
+      pipelineStages:
+        - docker: {}
+        - match:
+            selector: '{namespace="triton"}'
+            stages:
+              - json:
+                  expressions:
+                    level: level
+                    event: event
+                    inference_ms: inference_ms
+                    model_version: model_version
+              - labels:
+                  level:
+                  model_version:
+
+# Disable loki-stack's own Grafana — we use kube-prometheus-stack's Grafana
+grafana:
+  enabled: false
