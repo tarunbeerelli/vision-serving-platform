@@ -68,3 +68,11 @@ k8s-dry-run:
 
 k8s-diff:
 	kubectl diff -k k8s/overlays/dev
+
+docker-build:
+	docker build -t vision-serving-platform:local .
+
+docker-run:
+	docker run --rm -p 50051:50051 -p 9090:9090 \
+		-e TRITON_HOST=host.docker.internal \
+		vision-serving-platform:local

@@ -13,7 +13,7 @@ variable "region" {
 variable "zone" {
   description = "GCP zone for GPU node pool — T4 availability varies by zone"
   type        = string
-  default     = "us-east1-d"
+  default     = "us-east1-b"
 }
 
 variable "cluster_name" {

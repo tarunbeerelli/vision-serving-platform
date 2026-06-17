@@ -30,14 +30,14 @@ resource "google_service_account" "triton" {
 # ── GitHub Actions OIDC ───────────────────────────────────────────────────────
 # GitHub Actions federates identity with GCP — no stored credentials anywhere
 resource "google_iam_workload_identity_pool" "github" {
-  workload_identity_pool_id = "github-actions-pool"
+  workload_identity_pool_id = "gh-actions-pool"
   display_name              = "GitHub Actions Pool"
   project                   = var.project_id
 }
 
 resource "google_iam_workload_identity_pool_provider" "github" {
   workload_identity_pool_id          = google_iam_workload_identity_pool.github.workload_identity_pool_id
-  workload_identity_pool_provider_id = "github-provider"
+  workload_identity_pool_provider_id = "gh-provider"
   project                            = var.project_id
 
   attribute_mapping = {
