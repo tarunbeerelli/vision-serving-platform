@@ -28,7 +28,7 @@ logger = get_logger(__name__)
 MODEL_NAMES = {
     "fp32": "vit_fp32",
     "int8": "vit_int8",
-    "": settings.model.default_vit_version,
+    "": "vit_fp32",
 }
 
 
