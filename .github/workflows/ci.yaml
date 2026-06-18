@@ -152,4 +152,4 @@ jobs:
 
           kubectl rollout status deployment/gateway \
             -n triton \
-            --timeout=600s
+            --timeout=900s
