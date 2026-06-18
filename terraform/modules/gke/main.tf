@@ -55,22 +55,22 @@ resource "google_container_node_pool" "cpu_nodes" {
   }
 }
 
-# ── GPU node pool — Triton inference ─────────────────────────────────────────
 resource "google_container_node_pool" "gpu_nodes" {
   name     = "gpu-pool"
   cluster  = google_container_cluster.primary.id
-  location = var.region # GPU pools use zonal location for T4 availability
+  location = var.region    # regional, not zonal
   project  = var.project_id
 
-  initial_node_count = 0 # starts at zero — saves cost when idle
+  initial_node_count = 0
 
   autoscaling {
     min_node_count = 0
     max_node_count = 2
+    location_policy = "ANY"
   }
 
   node_config {
-    machine_type    = "n1-standard-4" # 4 vCPU, 15GB RAM — required for T4
+    machine_type    = "n1-standard-4"    # T4 GPU machine
     service_account = var.node_service_account
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
 
@@ -82,8 +82,6 @@ resource "google_container_node_pool" "gpu_nodes" {
       }
     }
 
-    # Taint GPU nodes so only GPU-requesting pods land here
-    # Triton deployment will have a matching toleration
     taint {
       key    = "nvidia.com/gpu"
       value  = "present"

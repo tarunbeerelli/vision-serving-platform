@@ -138,7 +138,7 @@ jobs:
         uses: google-github-actions/get-gke-credentials@v2
         with:
           cluster_name: vision-serving
-          location: us-east1
+          location: europe-west4
           project_id: vision-serving-platform
 
       - name: Apply k8s manifests

@@ -45,7 +45,7 @@ module "iam" {
 resource "google_storage_bucket" "model_repo" {
   name                        = var.model_bucket_name
   location                    = var.region
-  force_destroy               = false
+  force_destroy               = true
   uniform_bucket_level_access = true
 
   versioning {

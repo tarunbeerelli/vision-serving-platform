@@ -1,0 +1,23 @@
+Count,Message,Traceback,Nodes
+257,"<_InactiveRpcError of RPC that terminated with:
+	status = StatusCode.INTERNAL
+	details = ""[StatusCode.NOT_FOUND] Request for unknown model: 'fp32' is not found""
+	debug_error_string = ""UNKNOWN:Error received from peer ipv4:34.178.244.104:50051 {created_time:""2026-06-17T21:54:19.990377-04:00"", grpc_status:13, grpc_message:""[StatusCode.NOT_FOUND] Request for unknown model: \'fp32\' is not found""}""
+>","  File ""/Users/beerelli/Documents/projects/vision-serving-platform/.venv/lib/python3.12/site-packages/locust/user/task.py"", line 363, in run
+    self.execute_next_task()
+  File ""/Users/beerelli/Documents/projects/vision-serving-platform/.venv/lib/python3.12/site-packages/locust/user/task.py"", line 396, in execute_next_task
+    self.execute_task(self._task_queue.popleft())
+  File ""/Users/beerelli/Documents/projects/vision-serving-platform/.venv/lib/python3.12/site-packages/locust/user/task.py"", line 513, in execute_task
+    task(self.user)
+  File ""/Users/beerelli/Documents/projects/vision-serving-platform/locust/locustfile.py"", line 204, in classify_default
+    self._classify()
+  File ""/Users/beerelli/Documents/projects/vision-serving-platform/locust/locustfile.py"", line 134, in _classify
+    response = self.stub.Classify(request, timeout=30.0)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""/Users/beerelli/Documents/projects/vision-serving-platform/.venv/lib/python3.12/site-packages/grpc/_channel.py"", line 1181, in __call__
+    return _end_unary_response_blocking(state, call, False, None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""/Users/beerelli/Documents/projects/vision-serving-platform/.venv/lib/python3.12/site-packages/grpc/_channel.py"", line 1006, in _end_unary_response_blocking
+    raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+",local

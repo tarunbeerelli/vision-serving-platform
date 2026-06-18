@@ -7,13 +7,13 @@ variable "project_id" {
 variable "region" {
   description = "GCP region"
   type        = string
-  default     = "us-east1"
+  default     = "europe-west4"
 }
 
 variable "zone" {
   description = "GCP zone for GPU node pool — T4 availability varies by zone"
   type        = string
-  default     = "us-east1-b"
+  default     = "europe-west4-a"
 }
 
 variable "cluster_name" {
@@ -25,7 +25,7 @@ variable "cluster_name" {
 variable "model_bucket_name" {
   description = "GCS bucket for Triton model repository"
   type        = string
-  default     = "vision-serving-models-564530715752" # suffix with project number for global uniqueness
+  default     = "vision-serving-models-564530715752-v2" # suffix with project number for global uniqueness
 }
 
 variable "github_repo" {

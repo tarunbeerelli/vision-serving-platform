@@ -124,3 +124,42 @@ export-clip:
 
 validate-clip:
 	python quantization/validate_clip.py
+
+upload-models:
+	bash scripts/upload_models.sh
+
+deploy-gke:
+	bash scripts/deploy_to_gke.sh
+
+# Locust scenarios — replace HOST with gateway external IP
+locust-ramp:
+	locust -f locust/locustfile.py --tags ramp \
+		--host $(HOST) \
+		--users 500 --spawn-rate 10 \
+		--run-time 15m --headless \
+		--csv locust/results/ramp
+
+locust-mixed:
+	locust -f locust/locustfile.py --tags mixed \
+		--host $(HOST) \
+		--users 200 --spawn-rate 5 \
+		--run-time 20m --headless \
+		--csv locust/results/mixed
+
+locust-stress:
+	locust -f locust/locustfile.py --tags stress \
+		--host $(HOST) \
+		--users 50 --spawn-rate 2 \
+		--run-time 10m --headless \
+		--csv locust/results/stress
+
+locust-ab:
+	locust -f locust/locustfile.py --tags ab \
+		--host $(HOST) \
+		--users 100 --spawn-rate 5 \
+		--run-time 10m --headless \
+		--csv locust/results/ab
+
+locust-ui:
+	locust -f locust/locustfile.py \
+		--host $(HOST)
