@@ -1,13 +1,67 @@
 # Vision Serving Platform
 
-Production ML inference platform serving ViT-tiny (FP32) and CLIP (zero-shot)
-via NVIDIA Triton Inference Server on GKE, with full GitOps CI/CD, autoscaling,
-and Prometheus + Grafana + Loki observability.
+![CI](https://github.com/tarunbeerelli/vision-serving-platform/actions/workflows/ci.yaml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.12-blue)
+![Triton](https://img.shields.io/badge/Triton-24.05-green)
+![GKE](https://img.shields.io/badge/GKE-Standard-blue)
+![Terraform](https://img.shields.io/badge/Terraform-1.7-purple)
+![gRPC](https://img.shields.io/badge/API-gRPC-orange)
 
-> **Portfolio context:** This project demonstrates production MLOps engineering.
-> It complements [RMAML](https://github.com/tarunbeerelli/RMAML), a Riemannian
-> meta-learning research project — together they cover the full spectrum from
-> ML research to production deployment.
+Production ML inference platform — ViT-tiny + CLIP served via NVIDIA Triton
+on GKE, provisioned with Terraform, deployed via GitOps CI/CD with zero stored
+credentials, and monitored with Prometheus + Grafana + Loki.
+
+---
+
+## Highlights
+
+| | |
+|---|---|
+| **API** | gRPC gateway wrapping Triton — custom proto contract, reflection enabled, grpcurl-debuggable |
+| **Models** | ViT-tiny ImageNet classification + CLIP zero-shot; ONNX export → TensorRT INT8/FP16 quantization pipeline |
+| **Serving** | NVIDIA Triton — dynamic batching, multi-model versioning (FP32/INT8), native Prometheus metrics |
+| **Infrastructure** | Terraform — custom VPC, GKE Standard, GPU node pool (T4, autoscales 0→2), GCS model repo, Workload Identity |
+| **CI/CD** | GitHub Actions — OIDC auth (zero stored credentials), multi-arch Docker (amd64+arm64), GitOps deploy |
+| **Observability** | kube-prometheus-stack + Loki + DCGM — latency histograms, prediction drift detection, structured JSON logs |
+| **Load testing** | Locust — 5 scenarios (ramp, sustained, mixed, label stress, A/B versioning) |
+| **GPU benchmark** | RTX 4090 TensorRT FP16 — 0.78ms P50, 1,266 RPS, 280x CPU speedup |
+
+---
+
+## Performance
+
+| Environment | Engine | P50 | P99 | RPS |
+|-------------|--------|-----|-----|-----|
+| RTX 4090 (Vast.ai) | TensorRT FP16 | 0.78ms | 0.81ms | 1,266 |
+| RTX 4090 (Vast.ai) | TensorRT INT8 | 0.89ms | 0.90ms | 1,120 |
+| 2× RTX 4090 (Vast.ai) | onnxruntime FP32 | 2.6ms | 2.7ms | 768 |
+| 1× RTX 4090 (Vast.ai) | onnxruntime FP32 | 2.6ms | 2.7ms | 385 |
+| GKE CPU (e2-standard-2) | onnxruntime FP32 | 250ms | 310ms | 4 |
+
+**280x latency improvement** and **316x throughput improvement** CPU → TensorRT FP16.
+
+TensorRT FP16 outperforms INT8 on RTX 4090 — the GPU's fast FP16 tensor cores
+combined with partial INT8 fallback on ViT LayerNorm layers means FP16 wins.
+INT8 advantages are more pronounced on T4/V100 where INT8 tensor cores have a
+larger relative advantage.
+
+> GPU benchmarks run on Vast.ai RTX 4090 (TensorRT 10.0.1, CUDA 12.6).
+> GKE GPU node pool (T4) configured in Terraform — regional capacity constraints
+> during development required CPU fallback for GKE deployment.
+> Dual-GPU benchmark shows 1.99x near-linear scaling via onnxruntime parallel instances.
+
+---
+
+## Screenshots
+
+### Grafana — Inference dashboard
+![Grafana Inference Dashboard](docs/screenshots/grafana_inference.png)
+
+### Grafana — Latency distribution
+![Grafana Latency](docs/screenshots/grafana_latency.png)
+
+### GPU utilisation — RTX 4090 under load
+![nvidia-smi](docs/screenshots/nvidia_smi_dual_gpu.png)
 
 ---
 
@@ -48,7 +102,7 @@ Client (Locust / grpcurl)
 | Layer | Technology |
 |-------|-----------|
 | Inference server | NVIDIA Triton 24.05 |
-| Model optimisation | TensorRT INT8 + ONNX |
+| Model optimisation | TensorRT FP16/INT8 + ONNX |
 | API protocol | gRPC (proto/inference.proto) |
 | Container | Docker multi-arch (amd64 + arm64) |
 | Registry | GHCR |
@@ -73,25 +127,6 @@ Client (Locust / grpcurl)
 
 ---
 
-## Benchmark results (CPU — GKE e2-standard-2)
-
-| Metric | Value |
-|--------|-------|
-| Requests | 2,642 |
-| Failures | 0 (0%) |
-| P50 latency | 250ms |
-| P95 latency | 270ms |
-| P99 latency | 310ms |
-| Max latency | 620ms |
-| Throughput | ~4 RPS |
-
-> CPU inference at 250ms/request is the throughput bottleneck.
-> On GPU (T4 + TensorRT INT8), expected P50 ~10ms, throughput ~200 RPS.
-> GPU node pool is provisioned in Terraform — autoscales 0→2 T4 nodes under load.
-> Regional capacity constraints in GCP during development required CPU fallback.
-
----
-
 ## Quantization pipeline
 
 ```
@@ -99,10 +134,11 @@ HuggingFace ViT-tiny (PyTorch)
         ↓  quantization/export_onnx.py
 model.onnx  (FP32, ~25MB) ──────────────── serves directly via Triton onnxruntime
         ↓  quantization/convert_tensorrt.py (GPU host required)
-model.plan  (INT8 TensorRT, ~6MB) ──────── 3-5x faster on GPU, <0.5% accuracy drop
+model.plan  (FP16, ~23MB) ──────────────── 3.3x faster than onnxruntime FP32
+model.plan  (INT8, ~23MB) ──────────────── best on T4/V100, marginal on RTX 4090
 
-Calibration: 500 ImageNet validation images
-INT8 scale factors computed per-layer via quantization/calibration_dataset.py
+Calibration: 200 synthetic ImageNet-distribution images
+INT8 scale factors computed per-layer via IInt8EntropyCalibrator2
 ```
 
 ---
@@ -117,7 +153,7 @@ Defined in `proto/inference.proto`. All clients speak gRPC.
 import grpc
 from src.generated import inference_pb2, inference_pb2_grpc
 
-channel = grpc.insecure_channel("34.178.244.104:50051")
+channel = grpc.insecure_channel("<gateway-ip>:50051")
 stub = inference_pb2_grpc.GatewayServiceStub(channel)
 
 with open("image.jpg", "rb") as f:
@@ -257,6 +293,9 @@ Five Locust scenarios in `locust/locustfile.py`:
 | Label stress | `LabelStressUser` | ZeroShot with 2/10/50/100 labels |
 | A/B versioning | `ABVersionUser` | 50% FP32 vs 50% INT8 (GPU) |
 
+Results saved to `locust/results/` — CSV files with per-request latency,
+RPS, and failure rates for each scenario.
+
 ```bash
 # Ramp test
 locust -f locust/locustfile.py RampUser \
@@ -319,7 +358,7 @@ src/serving/            Gateway service
   metrics.py            Prometheus counters + histograms
   settings.py           Pydantic config (env var injection)
   logging_config.py     Structlog JSON setup
-quantization/           PyTorch → ONNX → TensorRT INT8 pipeline
+quantization/           PyTorch → ONNX → TensorRT FP16/INT8 pipeline
 triton_repo/            Triton model repository (artifacts in GCS)
 k8s/                    Kubernetes manifests (Kustomize)
   base/                 Core manifests
@@ -334,25 +373,24 @@ monitoring/             Grafana dashboards + Prometheus alert rules
   helm/                 Helm values (kube-prometheus-stack, loki-stack, DCGM)
 locust/                 Load test scenarios
   results/              Benchmark CSV output
+docs/screenshots/       Grafana dashboards + GPU benchmark screenshots
 ```
 
 ---
 
 ## Known limitations and future work
 
-**GPU capacity:** T4 GPU nodes are configured in Terraform but couldn't be
-provisioned during development due to GCP regional capacity constraints in
-us-east1 and europe-west4. CPU fallback used for all benchmarks. GPU inference
-(TensorRT INT8) benchmarked separately on Vast.ai.
+**GPU capacity on GKE:** T4 GPU nodes are configured in Terraform but couldn't
+be provisioned during development due to GCP regional capacity constraints.
+CPU fallback used for GKE deployment. GPU inference benchmarked on Vast.ai
+RTX 4090 — TensorRT FP16 at 0.78ms P50, 1,266 RPS, 280x CPU speedup.
 
-**INT8 calibration:** TensorRT INT8 engine requires NVIDIA hardware for
-conversion. Calibration pipeline (`quantization/convert_tensorrt.py`) is
-complete and tested on Vast.ai. Engine not included in GCS model repo due to
-platform-specific compilation.
+**TensorRT INT8 vs FP16:** INT8 (0.89ms) is marginally slower than FP16
+(0.78ms) on RTX 4090 due to partial fallback on ViT LayerNorm layers and the
+GPU's fast FP16 tensor cores. INT8 advantage is more pronounced on T4/V100.
 
-**CLIP zero-shot:** Implemented and tested locally. Deployed to GKE and
-verified end-to-end. Not included in primary Locust benchmark due to higher
-CPU latency (~2-3s per request with 10 labels on CPU).
+**CLIP zero-shot:** Implemented and deployed to GKE. Not included in primary
+Locust benchmark due to higher CPU latency (~2-3s per request with 10 labels).
 
-**Future:** vLLM text embedding endpoint, prediction drift auto-remediation,
-multi-region failover, Istio service mesh for traffic splitting.
+**Future:** prediction drift auto-remediation, multi-region failover,
+Istio service mesh for traffic splitting, vLLM text embedding endpoint.
